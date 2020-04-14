@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+
+  mailcatcher:
+    ports:
+      - 1080:1080
+
+
+  nginx:
+    volumes:
+      - DOCKERSYNC:/phpapp:nocopy
+
+
+  application:
+    volumes:
+      - DOCKERSYNC:/phpapp:nocopy
+
+
+  elastic-hq:
+    ports:
+      - 5000:5000
+
+
+  nginx_ssl:
+    ports:
+      - 443:443
+
+
+volumes:
+  DOCKERSYNC:
+    external: true

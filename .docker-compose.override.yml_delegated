@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+
+  mailcatcher:
+    ports:
+      - 1080:1080
+
+
+  nginx:
+    volumes:
+      - ${APPLICATION:-../magento}:/phpapp:delegated
+
+  application:
+    volumes:
+      - ${APPLICATION:-../magento}:/phpapp:delegated
+
+
+  elastic-hq:
+    ports:
+      - 5000:5000
+
+
+  nginx_ssl:
+    ports:
+      - 443:443
+

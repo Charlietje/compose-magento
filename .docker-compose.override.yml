@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+
+  mailcatcher:
+    ports:
+      - 1080:1080
+
+
+  nginx:
+    volumes:
+      - nfsmount:/phpapp
+
+  application:
+    volumes:
+      - nfsmount:/phpapp
+
+
+  elastic-hq:
+    ports:
+      - 5000:5000
+
+
+  nginx_ssl:
+    ports:
+      - 443:443
+
+
+volumes:
+  nfsmount:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
+      device: ":${APPLICATION:-../magento}"

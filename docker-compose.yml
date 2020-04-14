@@ -24,13 +24,12 @@ services:
       - C_UID=${C_UID:-1000}
       - C_GID=${G_UID:-1000}
       - DEVELOPMENT=${DEVELOPMENT:-1}
+      - PHP_EXTRA_MODULES=gmp
     volumes:
       - ${APPLICATION:-../magento}:/phpapp
 
   nginx:
     image: dockerwest/nginx-magento${MAGENTOVERSION}:${NGINXVERSION:-stable}
-    environment:
-      - VIRTUAL_HOST=${BASEHOST:-magento.docker},${EXTRAHOSTS}
     volumes:
       - ${APPLICATION:-../magento}:/phpapp
 
@@ -44,3 +43,17 @@ services:
     environment:
       - VIRTUAL_HOST=hq.${BASEHOST:-magento.docker}
 
+  nginx_ssl:
+    image: nginx
+    environment:
+      - VIRTUAL_HOST=${BASEHOST:-magento.docker},${EXTRAHOSTS}
+    volumes:
+      - ./.ssl.conf:/etc/nginx/conf.d/default.conf
+      - ./keys:/etc/nginx/keys
+    expose:
+      - 443
+
+  varnish:
+    image: emgag/varnish:5.0.0
+    volumes:
+      - ./.default.vcl:/etc/varnish/default.vcl:ro

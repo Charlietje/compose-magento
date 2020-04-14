@@ -9,9 +9,107 @@ init_environment() {
     sed -i -e "s/C_UID=1000/C_UID=$USER_ID/g" ./.env
     sed -i -e "s/C_GID=1000/C_GID=$GROUP_ID/g" ./.env
 
+    echo "Setup step 1:"
     echo "Environment initiated."
     echo "Please update .env file according to your needs. Then start the environment by running ./environment"
+    echo ""
 }
+
+init_varnish_config() {
+    cp ./.default-sample.vcl ./.default.vcl
+
+    echo "Setup step 2:"
+    echo "Default varnish config file initiated."
+    echo "Please update default.vcl file according to your needs. Then start the environment by running ./environment"
+    echo ""
+}
+
+init_ssl_environment() {
+    cp ./.ssl-sample.conf ./.ssl.conf
+
+    echo "Setup step 3:"
+    echo "Default ssl config file initiated."
+    echo "Please update ssl.conf file according to your needs. Then start the environment by running ./environment"
+    echo ""
+}
+
+
+init_docker_sync() {
+    if ! gem list | grep docker-sync; then
+        sudo gem install docker-sync
+    fi
+    if [ ! -f docker-sync.yml ]; then
+        cp .docker-sync.yml docker-sync.yml
+    fi
+    USER_ID=$(id -u)
+    GROUP_ID=$(id -g)
+    sed -i "s|USER_ID|$USER_ID|" docker-sync.yml
+    sed -i "s|GROUP_ID|$GROUP_ID|" docker-sync.yml
+    sed -i "s|BASEDIR|$BASEDIR|" docker-sync.yml
+    sed -i "s|DOCKERSYNC|${BASEHOST/./}|" docker-sync.yml docker-compose-override.yml
+    docker-sync start
+}
+
+
+init_nfs() {
+    echo "Configuring NFS"
+    NFS="nfs.server.mount.require_resv_port = 0"
+    USER_ID=$(id -u)
+    GROUP_ID=$(id -g)
+    EXPORTS="/System/Volumes/Data -alldirs -mapall=$USER_ID:$GROUP_ID localhost"
+    if ! grep -qxF "$EXPORTS" /etc/exports; then
+        echo "$EXPORTS" | sudo tee -a /etc/exports
+        sudo nfsd restart
+    fi
+    if ! grep -qxF "$NFS" /etc/nfs.conf; then
+        echo "$NFS" | sudo tee -a /etc/nfs.conf
+        sudo nfsd restart
+    fi
+    sed -i "s|BASEDIR|$BASEDIR|" docker-compose.override.yml
+}
+
+init_delegated() {
+    # nothing to do
+    return
+}
+
+init_cached() {
+    # nothing to do
+    return
+}
+
+init_mac() {
+    if [ ! -f docker-compose.override.yml ]; then
+        BASEDIR="$(readlink -f $APPLICATION)"
+        case "$MOUNT" in
+            "nfs")
+                OVERRIDE=nfs;;
+            "delegated")
+                OVERRIDE=delegated;;
+            "cached")
+                OVERRIDE=cached;;
+            "dockersync")
+                OVERRIDE=docker_sync;;
+            "*")
+                OVERRIDE=default;;
+        esac
+        cp ./.docker-compose.override.yml_$OVERRIDE docker-compose.override.yml
+        init_$OVERRIDE
+        echo "Setup step 4:"
+        echo "Default docker-compose.override.yml config file initiated."
+        echo "Please update docker-compose.override.yml file according to your needs. Then start the environment by running ./environment"
+        echo ""
+    fi
+
+    echo "Updating /etc/hosts file"
+    MARKER1='# BEGIN DOCKER'
+    MARKER2='# END DOCKER'
+    if ! grep -qz "$MARKER1.*$MARKER2" /etc/hosts; then
+        echo -e "\n$MARKER1\n$MARKER2" | sudo tee -a /etc/hosts
+    fi
+    sudo sed -i "/$MARKER1/,/$MARKER2/c${MARKER1}\n127.0.0.1 $BASEHOST ${EXTRAHOSTS/,/ } mailcatcher.$BASEHOST hq.$BASEHOST\n${MARKER2}" /etc/hosts
+}
+
 
 uname=$(uname)
 if [ "$uname" = "Linux" ]; then
@@ -35,22 +133,26 @@ if [ "$1" = "init" ]; then
     exit 0
 fi
 
+if [ ! -f .default.vcl ]; then
+    echo "No varnish config found, running initialisation..."
+    sleep 1
+    init_varnish_config
+fi
+
+if [ ! -f .ssl.conf ]; then
+    echo "No ssl config found, running initialisation..."
+    sleep 1
+    init_ssl_environment
+fi
+
+if [ "$uname" = "Darwin" ]; then
+    init_mac
+fi
+
+
 PATH="$(pwd)/bin:$PATH"
 export PATH
 
-# start dinghy if its not yet up (macOS)
-if which dinghy > /dev/null 2>&1; then
-    if ! dinghy ip > /dev/null 2>&1; then
-        dinghy up
-    fi
-    eval $(dinghy env)
-elif ! docker info > /dev/null 2>&1; then
-    if [ "$uname" = "Darwin" ]; then
-        open -a Docker
-    elif [ "$uname" = "Linux" ]; then
-        sudo systemctl restart docker.service
-    fi
-fi
 
 cd "$APPLICATION"
 
@@ -85,3 +187,4 @@ elif [ "$MANAGER" = "shell" ]; then
 else
     echo "run $0 [screen|tmux|byobu|shell]"
 fi
+

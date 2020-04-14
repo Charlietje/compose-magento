@@ -8,7 +8,6 @@ import contextlib
 import codecs
 import re
 import shutil
-import platform
 
 
 def split_env(env):
@@ -52,12 +51,12 @@ class Environment:
                 raise ValueError("Env does not contain %s" % requiredkey)
 
     def get_compose_filename(self):
-        dingyexec = shutil.which('dinghy')
-        if None is not dingyexec:
-            return 'docker-compose-dinghy.yml'
-        if 'Darwin' == platform.system():
-            return 'docker-compose-mac.yml'
-
+#        dingyexec = shutil.which('dinghy')
+#        if None is not dingyexec:
+#            return 'docker-compose-dinghy.yml'
+#        osname = os.uname()[0]
+#        if 'Darwin' in osname:
+#            return 'docker-compose-mac.yml'
         return 'docker-compose.yml'
 
     def get_project_name(self):
