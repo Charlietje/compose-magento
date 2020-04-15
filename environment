@@ -46,7 +46,7 @@ init_docker_sync() {
     sed -i "s|USER_ID|$USER_ID|" docker-sync.yml
     sed -i "s|GROUP_ID|$GROUP_ID|" docker-sync.yml
     sed -i "s|BASEDIR|$BASEDIR|" docker-sync.yml
-    sed -i "s|DOCKERSYNC|${BASEHOST/./}|" docker-sync.yml docker-compose-override.yml
+    sed -i "s|DOCKERSYNC|${BASEHOST/./}|" docker-sync.yml docker-compose.override.yml
     docker-sync start
 }
 
