@@ -23,5 +23,6 @@ services:
 
   nginx_ssl:
     ports:
+      - 80:80
       - 443:443
 
