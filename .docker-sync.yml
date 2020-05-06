@@ -4,6 +4,7 @@ syncs:
     notify_terminal: true
     src: "BASEDIR"
     watch_args: '-v'
+    sync_strategy: 'native_osx'
     sync_userid: 'USER_ID'
     sync_groupid: 'GROUP_ID'
     sync_excludes: ['.git']
