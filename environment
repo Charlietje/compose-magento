@@ -105,7 +105,7 @@ init_mac() {
     MARKER1='# BEGIN DOCKER'
     MARKER2='# END DOCKER'
     if ! grep -qz "$MARKER1.*$MARKER2" /etc/hosts; then
-        echo -e "\n$MARKER1\n$MARKER2" | sudo tee -a /etc/hosts
+        echo "\n$MARKER1\n$MARKER2" | sudo tee -a /etc/hosts
     fi
     sudo sed -i "/$MARKER1/,/$MARKER2/c${MARKER1}\n127.0.0.1 $BASEHOST ${EXTRAHOSTS/,/ } mailcatcher.$BASEHOST hq.$BASEHOST\n${MARKER2}" /etc/hosts
 }
