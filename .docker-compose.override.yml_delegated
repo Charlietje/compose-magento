@@ -11,9 +11,12 @@ services:
     volumes:
       - ${APPLICATION:-../magento}:/phpapp:delegated
 
+
   application:
     volumes:
       - ${APPLICATION:-../magento}:/phpapp:delegated
+    environment:
+      - "XDEBUG_CONFIG=remote_host=docker.for.mac.localhost remote_connect_back=0"
 
 
   elastic-hq:
@@ -25,4 +28,9 @@ services:
     ports:
       - 80:80
       - 443:443
+
+
+  mysql:
+    ports:
+      - 3306:3306
 
